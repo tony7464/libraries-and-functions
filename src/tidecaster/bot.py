@@ -58,7 +58,11 @@ class Bot:
         self._paused = False
 
     def focused(self) -> bool:
-        return self.config.app.name.lower() in self.frontmost_app().lower()
+        names = self.config.app.name
+        if isinstance(names, str):
+            names = [names]
+        app = self.frontmost_app().lower()
+        return any(n.lower() in app for n in names)
 
     def run(self) -> Stats:
         timing = self.config.timing

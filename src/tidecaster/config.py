@@ -35,7 +35,8 @@ class Timing:
 
 @dataclass
 class App:
-    name: str = "warcraft"
+    # Substrings of the game's app name; a single string also works.
+    name: list[str] = field(default_factory=lambda: ["warcraft", "wow"])
 
 
 @dataclass

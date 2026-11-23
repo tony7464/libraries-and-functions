@@ -75,6 +75,17 @@ def test_no_keys_sent_while_game_not_in_front():
     assert world.pressed == []
 
 
+def test_app_name_matching():
+    world = World()
+    cfg, bot = make(world)
+    for app, expected in [("Wow", True), ("World of Warcraft Classic", True), ("Claude", False)]:
+        world.app = app
+        assert bot.focused() is expected
+    cfg.app.name = "forever"
+    world.app = "WoW Forever"
+    assert bot.focused() is True
+
+
 def test_lure_applied_first_and_on_schedule():
     world = World(splash_at=5.0)
     cfg, bot = make(world, max_minutes=25)
