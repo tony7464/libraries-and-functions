@@ -2,6 +2,7 @@ import random
 
 from tidecaster.bot import Bot
 from tidecaster.config import Config
+from tidecaster.keys import matches
 
 
 class World:
@@ -13,6 +14,7 @@ class World:
         self.now = 0.0
         self.pressed = []
         self.app = "World of Warcraft"
+        self.names = Config().app.name
         self.splash_at = splash_at  # seconds after each cast, or None
         self.cast_time = 0.0
 
@@ -27,8 +29,8 @@ class World:
         if key == "1":
             self.cast_time = self.now
 
-    def frontmost_app(self):
-        return self.app
+    def ready(self):
+        return matches(self.app, self.names)
 
     def flush(self):
         pass
@@ -45,7 +47,7 @@ def make(world, **timing):
     cfg = Config()
     for k, v in timing.items():
         setattr(cfg.timing, k, v)
-    bot = Bot(cfg, world, world.press, world.frontmost_app, clock=world.clock,
+    bot = Bot(cfg, world, world.press, world.ready, clock=world.clock,
               sleep=world.sleep, rng=random.Random(1), log=lambda m: None)
     return cfg, bot
 
@@ -75,6 +77,23 @@ def test_no_keys_sent_while_game_not_in_front():
     assert world.pressed == []
 
 
+def test_app_name_matching():
+    names = Config().app.name
+    assert matches("Wow", names)
+    assert matches("World of Warcraft Classic", names)
+    assert not matches("Claude", names)
+    assert matches("WoW Forever", "forever")
+
+
+def test_no_interact_if_game_goes_away_mid_cast():
+    world = World(splash_at=5.0)
+    _, bot = make(world)
+    world.sleep = lambda s: (setattr(world, "now", world.now + s), setattr(world, "app", "Safari"))
+    bot.sleep = world.sleep
+    assert bot.cycle() is False
+    assert [k for _, k in world.pressed] == ["1"]
+
+
 def test_lure_applied_first_and_on_schedule():
     world = World(splash_at=5.0)
     cfg, bot = make(world, max_minutes=25)
@@ -91,3 +110,36 @@ def test_max_minutes_stops_the_run():
     stats = bot.run()
     assert 120 <= world.now < 150
     assert stats.casts == stats.bites > 5
+
+
+def test_windows_off_by_default():
+    world = World(splash_at=5.0)
+    _, bot = make(world, max_minutes=30)
+    bot.run()
+    assert {k for _, k in world.pressed} == {"1", "f"}
+
+
+def test_windows_opened_and_closed_between_casts():
+    world = World(splash_at=5.0)
+    cfg, bot = make(world, max_minutes=30)
+    cfg.windows.enabled = True
+    stats = bot.run()
+    keys = [k for _, k in world.pressed]
+    # Every round is bags open, bags close, sheet open, sheet close, then a cast.
+    rounds = [i for i, k in enumerate(keys) if k == "b" and keys[i - 1] != "b"]
+    assert stats.window_checks == len(rounds) and 3 <= len(rounds) <= 7
+    for i in rounds:
+        assert keys[i:i + 5] == ["b", "b", "c", "c", "1"]
+    times = [world.pressed[i][0] for i in rounds]
+    assert times[0] >= 240
+    assert all(240 <= b - a <= 580 for a, b in zip(times, times[1:]))
+
+
+def test_windows_can_skip_one_key():
+    world = World(splash_at=5.0)
+    cfg, bot = make(world, max_minutes=12)
+    cfg.windows.enabled = True
+    cfg.windows.character = ""
+    bot.run()
+    keys = [k for _, k in world.pressed]
+    assert keys.count("b") >= 2 and "c" not in keys
