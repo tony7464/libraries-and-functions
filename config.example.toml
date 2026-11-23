@@ -1,0 +1,24 @@
+# Copy to config.toml and edit. Every key is optional; these are the defaults.
+
+[keys]
+cast = "1"          # key bound to Fishing
+interact = "f"      # key bound to "Interact With Target"
+lure = ""           # key bound to a lure/bait macro; empty disables lures
+
+[audio]
+device = "BlackHole"  # substring of the input device that carries game audio
+ratio = 4.0           # splash must be this many times louder than the background
+min_rms = 0.01        # ...and at least this loud in absolute terms (0..1)
+hold_blocks = 2       # consecutive loud 50 ms blocks needed to count as a bite
+warmup = 2.0          # seconds after casting during which sound is ignored
+
+[timing]
+bite_timeout = 22.0        # give up on a cast after this long
+reaction = [0.25, 0.7]     # delay between splash and interact, seconds
+loot_delay = [1.0, 1.8]    # wait after interacting, before the next cast
+lure_minutes = 10.0        # re-apply the lure this often
+lure_cast_time = 5.5       # how long applying the lure takes
+max_minutes = 0            # stop after this long; 0 runs until Ctrl+C
+
+[app]
+name = "warcraft"   # only send keys while the frontmost app name contains this
