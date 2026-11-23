@@ -32,8 +32,9 @@ class Bot:
         config: Config,
         listener: AudioSource,
         press: Callable[[str], None],
-        frontmost_app: Callable[[], str],
+        ready: Callable[[], bool],
         *,
+        waiting: str = "Game is not in front",
         clock: Callable[[], float] = time.monotonic,
         sleep: Callable[[float], None] = time.sleep,
         rng: random.Random | None = None,
@@ -42,7 +43,8 @@ class Bot:
         self.config = config
         self.listener = listener
         self.press = press
-        self.frontmost_app = frontmost_app
+        self.ready = ready
+        self.waiting = waiting
         self.clock = clock
         self.sleep = sleep
         self.rng = rng or random.Random()
@@ -57,13 +59,6 @@ class Bot:
         self._next_lure = 0.0
         self._paused = False
 
-    def focused(self) -> bool:
-        names = self.config.app.name
-        if isinstance(names, str):
-            names = [names]
-        app = self.frontmost_app().lower()
-        return any(n.lower() in app for n in names)
-
     def run(self) -> Stats:
         timing = self.config.timing
         start = self.clock()
@@ -72,14 +67,14 @@ class Bot:
             if timing.max_minutes and self.clock() - start >= timing.max_minutes * 60:
                 self.log("Time limit reached.")
                 return self.stats
-            if not self.focused():
+            if not self.ready():
                 if not self._paused:
-                    self.log("Game is not in front - paused.")
+                    self.log(f"{self.waiting} - paused.")
                     self._paused = True
                 self.sleep(1.0)
                 continue
             if self._paused:
-                self.log("Game is in front - resuming.")
+                self.log("Resuming.")
                 self._paused = False
             self.cycle()
 
@@ -105,7 +100,7 @@ class Bot:
             return False
 
         self.sleep(self.rng.uniform(*timing.reaction))
-        if not self.focused():
+        if not self.ready():
             return False
         self.press(keys.interact)
         self.stats.bites += 1

@@ -27,15 +27,26 @@ def keycode(key: str) -> int:
         ) from None
 
 
-def press(key: str, hold: float = 0.06) -> None:
+def press(key: str, pid: int | None = None, hold: float = 0.06) -> None:
+    """Press a key: system-wide, or delivered only to process `pid`."""
     import Quartz
 
     code = keycode(key)
     for down in (True, False):
         event = Quartz.CGEventCreateKeyboardEvent(None, code, down)
-        Quartz.CGEventPost(Quartz.kCGHIDEventTap, event)
+        if pid is None:
+            Quartz.CGEventPost(Quartz.kCGHIDEventTap, event)
+        else:
+            Quartz.CGEventPostToPid(pid, event)
         if down:
             time.sleep(hold)
+
+
+def matches(app_name: str, names: str | list[str]) -> bool:
+    if isinstance(names, str):
+        names = [names]
+    app_name = app_name.lower()
+    return any(n.lower() in app_name for n in names)
 
 
 def frontmost_app() -> str:
@@ -43,6 +54,17 @@ def frontmost_app() -> str:
 
     app = NSWorkspace.sharedWorkspace().frontmostApplication()
     return str(app.localizedName()) if app else ""
+
+
+def game_pid(names: str | list[str]) -> int | None:
+    """Process id of the running game, or None if it is not open."""
+    from AppKit import NSWorkspace
+
+    for app in NSWorkspace.sharedWorkspace().runningApplications():
+        # Regular (Dock) apps only, so helper processes are not picked up.
+        if app.activationPolicy() == 0 and matches(str(app.localizedName() or ""), names):
+            return int(app.processIdentifier())
+    return None
 
 
 def accessibility_granted() -> bool:

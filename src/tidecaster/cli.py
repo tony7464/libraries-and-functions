@@ -66,9 +66,31 @@ def cmd_run(args) -> int:
         )
         return 1
 
+    names = cfg.app.name
+    if args.background or cfg.app.background:
+        # Keys go only to the game process, so it can sit behind other windows.
+        game = {"pid": None}
+
+        def ready() -> bool:
+            game["pid"] = keys.game_pid(names)
+            return game["pid"] is not None
+
+        def press(key: str) -> None:
+            keys.press(key, pid=game["pid"])
+
+        waiting = "Game is not running"
+        hint = "background mode, keep the game window open (not minimized)"
+    else:
+        def ready() -> bool:
+            return keys.matches(keys.frontmost_app(), names)
+
+        press = keys.press
+        waiting = "Game is not in front"
+        hint = "switch to the game"
+
     with audio.Listener(cfg.audio.device) as listener:
-        bot = Bot(cfg, listener, keys.press, keys.frontmost_app)
-        print(f"Starting in {args.delay:.0f}s - switch to the game. Ctrl+C here to stop.")
+        bot = Bot(cfg, listener, press, ready, waiting=waiting)
+        print(f"Starting in {args.delay:.0f}s - {hint}. Ctrl+C here to stop.")
         time.sleep(args.delay)
         try:
             bot.run()
@@ -86,11 +108,13 @@ def main(argv: list[str] | None = None) -> int:
     sub = parser.add_subparsers(dest="command")
     run = sub.add_parser("run", help="start fishing (default)")
     run.add_argument("--delay", type=float, default=5.0, help="seconds before the first cast")
+    run.add_argument("--background", action="store_true",
+                     help="send keys straight to the game so it can run behind other windows")
     sub.add_parser("calibrate", help="show live audio levels")
     sub.add_parser("devices", help="list audio input devices")
     args = parser.parse_args(argv)
     if args.command is None:
-        args.command, args.delay = "run", 5.0
+        args.command, args.delay, args.background = "run", 5.0, False
     try:
         return {"run": cmd_run, "calibrate": cmd_calibrate, "devices": cmd_devices}[args.command](args)
     except (ValueError, RuntimeError, OSError, ImportError) as exc:

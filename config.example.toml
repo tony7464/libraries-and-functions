@@ -21,4 +21,5 @@ lure_cast_time = 5.5       # how long applying the lure takes
 max_minutes = 0            # stop after this long; 0 runs until Ctrl+C
 
 [app]
-name = ["warcraft", "wow"]  # only send keys while the frontmost app name contains one of these
+name = ["warcraft", "wow"]  # the game's app name contains one of these
+background = false          # true: send keys straight to the game so it can run behind other windows

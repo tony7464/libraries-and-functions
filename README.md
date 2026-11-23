@@ -20,8 +20,9 @@ the mouse: everything goes through two keybinds and your Mac's audio output.
 4. If nothing is heard for 22 seconds it simply recasts.
 5. Optionally presses a **lure** key every 10 minutes.
 
-Keys are only sent while WoW is the frontmost app; switch away and the bot
-pauses, switch back and it resumes.
+By default keys are only sent while WoW is the frontmost app; switch away and
+the bot pauses, switch back and it resumes. See [Background mode](#background-mode)
+to keep fishing while you use other apps.
 
 ## Setup
 
@@ -84,6 +85,25 @@ tidecaster             # start fishing (5 s countdown, Ctrl+C to stop)
 
 To change keys, thresholds, lure interval or a session time limit, copy
 `config.example.toml` to `config.toml` and edit it.
+
+### Background mode
+
+```sh
+tidecaster run --background
+```
+
+(or `background = true` under `[app]` in `config.toml`). Key presses are
+delivered only to the WoW process instead of system-wide, so the game can sit
+behind other windows while you type elsewhere. For this to work:
+
+- Leave the WoW window open: covered is fine, **minimized or hidden is not**.
+- In WoW's sound options, turn on **Sound in Background**.
+- Set WoW's **Output Device** (System > Sound in the game options) to
+  **BlackHole 2ch**. The bot then hears only the game, so videos, calls and
+  notification sounds cannot be mistaken for a splash. The trade-off is that
+  you no longer hear the game yourself. You can switch the Mac's own output
+  back to your normal speakers; the Multi-Output Device is not needed in this
+  mode.
 
 ### Tuning
 

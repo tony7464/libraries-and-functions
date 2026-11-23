@@ -37,6 +37,8 @@ class Timing:
 class App:
     # Substrings of the game's app name; a single string also works.
     name: list[str] = field(default_factory=lambda: ["warcraft", "wow"])
+    # Send keys straight to the game process so it can sit behind other windows.
+    background: bool = False
 
 
 @dataclass

@@ -2,6 +2,7 @@ import random
 
 from tidecaster.bot import Bot
 from tidecaster.config import Config
+from tidecaster.keys import matches
 
 
 class World:
@@ -13,6 +14,7 @@ class World:
         self.now = 0.0
         self.pressed = []
         self.app = "World of Warcraft"
+        self.names = Config().app.name
         self.splash_at = splash_at  # seconds after each cast, or None
         self.cast_time = 0.0
 
@@ -27,8 +29,8 @@ class World:
         if key == "1":
             self.cast_time = self.now
 
-    def frontmost_app(self):
-        return self.app
+    def ready(self):
+        return matches(self.app, self.names)
 
     def flush(self):
         pass
@@ -45,7 +47,7 @@ def make(world, **timing):
     cfg = Config()
     for k, v in timing.items():
         setattr(cfg.timing, k, v)
-    bot = Bot(cfg, world, world.press, world.frontmost_app, clock=world.clock,
+    bot = Bot(cfg, world, world.press, world.ready, clock=world.clock,
               sleep=world.sleep, rng=random.Random(1), log=lambda m: None)
     return cfg, bot
 
@@ -76,14 +78,20 @@ def test_no_keys_sent_while_game_not_in_front():
 
 
 def test_app_name_matching():
-    world = World()
-    cfg, bot = make(world)
-    for app, expected in [("Wow", True), ("World of Warcraft Classic", True), ("Claude", False)]:
-        world.app = app
-        assert bot.focused() is expected
-    cfg.app.name = "forever"
-    world.app = "WoW Forever"
-    assert bot.focused() is True
+    names = Config().app.name
+    assert matches("Wow", names)
+    assert matches("World of Warcraft Classic", names)
+    assert not matches("Claude", names)
+    assert matches("WoW Forever", "forever")
+
+
+def test_no_interact_if_game_goes_away_mid_cast():
+    world = World(splash_at=5.0)
+    _, bot = make(world)
+    world.sleep = lambda s: (setattr(world, "now", world.now + s), setattr(world, "app", "Safari"))
+    bot.sleep = world.sleep
+    assert bot.cycle() is False
+    assert [k for _, k in world.pressed] == ["1"]
 
 
 def test_lure_applied_first_and_on_schedule():
