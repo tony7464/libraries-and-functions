@@ -48,4 +48,5 @@ def frontmost_app() -> str:
 def accessibility_granted() -> bool:
     import Quartz
 
-    return bool(Quartz.AXIsProcessTrusted())
+    check = getattr(Quartz, "CGPreflightPostEventAccess", None)
+    return bool(check()) if check else True
