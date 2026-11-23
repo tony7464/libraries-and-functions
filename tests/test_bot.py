@@ -110,3 +110,36 @@ def test_max_minutes_stops_the_run():
     stats = bot.run()
     assert 120 <= world.now < 150
     assert stats.casts == stats.bites > 5
+
+
+def test_windows_off_by_default():
+    world = World(splash_at=5.0)
+    _, bot = make(world, max_minutes=30)
+    bot.run()
+    assert {k for _, k in world.pressed} == {"1", "f"}
+
+
+def test_windows_opened_and_closed_between_casts():
+    world = World(splash_at=5.0)
+    cfg, bot = make(world, max_minutes=30)
+    cfg.windows.enabled = True
+    stats = bot.run()
+    keys = [k for _, k in world.pressed]
+    # Every round is bags open, bags close, sheet open, sheet close, then a cast.
+    rounds = [i for i, k in enumerate(keys) if k == "b" and keys[i - 1] != "b"]
+    assert stats.window_checks == len(rounds) and 3 <= len(rounds) <= 7
+    for i in rounds:
+        assert keys[i:i + 5] == ["b", "b", "c", "c", "1"]
+    times = [world.pressed[i][0] for i in rounds]
+    assert times[0] >= 240
+    assert all(240 <= b - a <= 580 for a, b in zip(times, times[1:]))
+
+
+def test_windows_can_skip_one_key():
+    world = World(splash_at=5.0)
+    cfg, bot = make(world, max_minutes=12)
+    cfg.windows.enabled = True
+    cfg.windows.character = ""
+    bot.run()
+    keys = [k for _, k in world.pressed]
+    assert keys.count("b") >= 2 and "c" not in keys

@@ -20,6 +20,13 @@ lure_minutes = 10.0        # re-apply the lure this often
 lure_cast_time = 5.5       # how long applying the lure takes
 max_minutes = 0            # stop after this long; 0 runs until Ctrl+C
 
+[windows]
+enabled = false             # true: open and close the bags and character sheet now and then
+bags = "b"                  # key that toggles the bags; empty skips it
+character = "c"             # key that toggles the character sheet; empty skips it
+every_minutes = [4.0, 9.0]  # random gap between rounds
+open_seconds = [1.0, 2.5]   # how long each window stays open
+
 [app]
 name = ["warcraft", "wow"]  # the game's app name contains one of these
 background = false          # true: send keys straight to the game so it can run behind other windows

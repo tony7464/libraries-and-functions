@@ -34,6 +34,17 @@ class Timing:
 
 
 @dataclass
+class Windows:
+    """Occasionally open and close the bags and the character sheet."""
+
+    enabled: bool = False
+    bags: str = "b"
+    character: str = "c"
+    every_minutes: tuple[float, float] = (4.0, 9.0)
+    open_seconds: tuple[float, float] = (1.0, 2.5)
+
+
+@dataclass
 class App:
     # Substrings of the game's app name; a single string also works.
     name: list[str] = field(default_factory=lambda: ["warcraft", "wow"])
@@ -46,6 +57,7 @@ class Config:
     keys: Keys = field(default_factory=Keys)
     audio: Audio = field(default_factory=Audio)
     timing: Timing = field(default_factory=Timing)
+    windows: Windows = field(default_factory=Windows)
     app: App = field(default_factory=App)
 
 

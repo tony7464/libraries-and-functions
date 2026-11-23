@@ -105,6 +105,13 @@ behind other windows while you type elsewhere. For this to work:
   back to your normal speakers; the Multi-Output Device is not needed in this
   mode.
 
+### Bags and character sheet
+
+Set `enabled = true` under `[windows]` in `config.toml` and the bot will, every
+4 to 9 minutes (random), open and close your bags and then your character
+sheet between casts. The keys default to WoW's standard `B` and `C`; change
+them if yours differ, or set one to `""` to skip it.
+
 ### Tuning
 
 - **Misses splashes**: lower `ratio` (try 3) or `min_rms`; raise the in-game

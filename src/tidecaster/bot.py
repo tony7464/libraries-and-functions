@@ -24,6 +24,7 @@ class Stats:
     bites: int = 0
     timeouts: int = 0
     lures: int = 0
+    window_checks: int = 0
 
 
 class Bot:
@@ -57,12 +58,32 @@ class Bot:
             warmup=config.audio.warmup,
         )
         self._next_lure = 0.0
+        self._next_windows = 0.0
         self._paused = False
+
+    def _schedule_windows(self) -> None:
+        gap = self.rng.uniform(*self.config.windows.every_minutes)
+        self._next_windows = self.clock() + gap * 60
+
+    def _check_windows(self) -> None:
+        """Open and close the bags and character sheet, between casts."""
+        windows = self.config.windows
+        if not windows.enabled or self.clock() < self._next_windows:
+            return
+        for key in (windows.bags, windows.character):
+            if key:
+                self.press(key)
+                self.sleep(self.rng.uniform(*windows.open_seconds))
+                self.press(key)
+                self.sleep(self.rng.uniform(0.4, 1.0))
+        self.stats.window_checks += 1
+        self._schedule_windows()
 
     def run(self) -> Stats:
         timing = self.config.timing
         start = self.clock()
         self._next_lure = start
+        self._schedule_windows()
         while True:
             if timing.max_minutes and self.clock() - start >= timing.max_minutes * 60:
                 self.log("Time limit reached.")
@@ -88,6 +109,8 @@ class Bot:
             self.stats.lures += 1
             self._next_lure = self.clock() + timing.lure_minutes * 60
             self.sleep(timing.lure_cast_time)
+
+        self._check_windows()
 
         self.press(keys.cast)
         self.stats.casts += 1

@@ -54,7 +54,8 @@ def cmd_run(args) -> int:
     from .bot import Bot
 
     cfg = _load(args)
-    for key in (cfg.keys.cast, cfg.keys.interact, cfg.keys.lure):
+    for key in (cfg.keys.cast, cfg.keys.interact, cfg.keys.lure,
+                cfg.windows.bags, cfg.windows.character):
         if key:
             keys.keycode(key)  # fail early on a typo
     if not keys.accessibility_granted():
@@ -97,7 +98,8 @@ def cmd_run(args) -> int:
         except KeyboardInterrupt:
             print()
         s = bot.stats
-        print(f"Casts {s.casts}, bites {s.bites}, timeouts {s.timeouts}, lures {s.lures}.")
+        print(f"Casts {s.casts}, bites {s.bites}, timeouts {s.timeouts}, "
+              f"lures {s.lures}, window checks {s.window_checks}.")
     return 0
 
 
